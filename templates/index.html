@@ -1,0 +1,169 @@
+<!doctype html>
+<html>
+  <head>
+    <title>AI Health Checker</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="bg-animation">
+      <canvas id="particles"></canvas>
+      <div class="circle"></div>
+      <div class="circle"></div>
+      <div class="circle"></div>
+    </div>
+    <div class="container">
+      <img
+        src="https://cdn-icons-png.flaticon.com/512/4149/4149670.png"
+        class="logo"
+      />
+      <h1>🩺 AI Health Symptom Checker</h1>
+
+      <input
+        type="text"
+        id="symptoms"
+        placeholder="Enter symptoms (fever, cough)"
+      />
+
+      <button type="button" onclick="checkDisease()">Analyze</button>
+
+      <div class="symptoms-list">
+        <p>Select symptoms:</p>
+
+        <button type="button" onclick="addSymptom('fever')">Fever</button>
+        <button type="button" onclick="addSymptom('cough')">Cough</button>
+        <button type="button" onclick="addSymptom('headache')">Headache</button>
+        <button type="button" onclick="addSymptom('vomiting')">Vomiting</button>
+      </div>
+
+      <div id="result"></div>
+      <div id="loader" style="display: none"></div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("particles");
+      const ctx = canvas.getContext("2d");
+
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      let particles = [];
+
+      for (let i = 0; i < 60; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          dx: Math.random() - 0.5,
+          dy: Math.random() - 0.5,
+        });
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        particles.forEach((p) => {
+          p.x += p.dx;
+          p.y += p.dy;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+          ctx.fillStyle = "#43cea2";
+          ctx.fill();
+        });
+
+        // Draw lines between particles (AI network feel)
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i; j < particles.length; j++) {
+            let dx = particles[i].x - particles[j].x;
+            let dy = particles[i].y - particles[j].y;
+            let distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < 100) {
+              ctx.beginPath();
+              ctx.strokeStyle = "rgba(67,206,162,0.2)";
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.stroke();
+            }
+          }
+        }
+
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+      const diseaseData = {
+        Flu: {
+          symptoms: ["fever", "cough", "body pain", "chills"],
+          advice: "Take rest and drink fluids",
+        },
+        Cold: {
+          symptoms: ["cough", "sneezing"],
+          advice: "Stay warm and hydrated",
+        },
+        Migraine: {
+          symptoms: ["headache"],
+          advice: "Rest in dark place",
+        },
+        "Food Poisoning": {
+          symptoms: ["vomiting"],
+          advice: "Drink ORS",
+        },
+      };
+
+      function addSymptom(symptom) {
+        let input = document.getElementById("symptoms");
+
+        if (input.value === "") {
+          input.value = symptom;
+        } else {
+          input.value += ", " + symptom;
+        }
+      }
+
+      function checkDisease() {
+        let input = document.getElementById("symptoms").value.toLowerCase();
+        let userSymptoms = input.split(",").map((s) => s.trim());
+
+        let resultBox = document.getElementById("result");
+        let loader = document.getElementById("loader");
+
+        resultBox.innerText = "Analyzing...";
+        loader.style.display = "block";
+
+        setTimeout(() => {
+          let bestMatch = "";
+          let bestScore = 0;
+
+          for (let disease in diseaseData) {
+            let symptoms = diseaseData[disease].symptoms;
+            let matchCount = 0;
+
+            userSymptoms.forEach((s) => {
+              if (symptoms.includes(s)) matchCount++;
+            });
+
+            let score = matchCount / symptoms.length;
+
+            if (score > bestScore) {
+              bestScore = score;
+              bestMatch = disease;
+            }
+          }
+
+          loader.style.display = "none";
+
+          if (bestScore === 0) {
+            resultBox.innerText = "No match found";
+            resultBox.style.color = "red";
+          } else {
+            let percent = (bestScore * 100).toFixed(0);
+            let advice = diseaseData[bestMatch].advice;
+
+            resultBox.innerText = `Possible: ${bestMatch} (${percent}% match)\nAdvice: ${advice}`;
+            resultBox.style.color = "green";
+          }
+        }, 1500);
+      }
+    </script>
+  </body>
+</html>
